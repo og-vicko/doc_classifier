@@ -13,28 +13,49 @@ warnings.filterwarnings('ignore')
 st.title('DOCUMENT CLASSIFIER')
 
 
-def load_model_from_dir(model_name):
-    current_dir = os.getcwd()
+# def load_model_from_dir(model_name):
+#     current_dir = os.getcwd()
 
-    # Navigate one level up to the parent directory
-    parent_dir = os.path.dirname(current_dir)
-    models_dir = os.path.join(parent_dir, 'models')
+#     # Navigate one level up to the parent directory
+#     parent_dir = os.path.dirname(current_dir)
+#     models_dir = os.path.join(parent_dir, 'models')
+#     file_path = os.path.join(models_dir, model_name)
+    
+#     # Check if the model file exists
+#     if not os.path.exists(file_path):
+#         raise FileNotFoundError(f"The model file {model_name} does not exist in the directory {models_dir}.")
+
+#     # Load the model from the specified path using dill
+#     try:
+#         with open(file_path, 'rb') as f:
+#             model = dill.load(f)
+#         print(f"Model loaded from {file_path}")
+#     except Exception as e:
+#         raise RuntimeError(f"Failed to load model: {e}")
+    
+#     return model        
+def load_model_from_dir(model_name):
+    # Get the current script directory
+    current_dir = os.path.dirname(__file__)
+    # Define the path to the models directory
+    models_dir = os.path.join(current_dir, '..', 'models')
+    # Construct the full file path
     file_path = os.path.join(models_dir, model_name)
     
     # Check if the model file exists
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"The model file {model_name} does not exist in the directory {models_dir}.")
-
+        st.error(f"The model file {model_name} does not exist in the directory {models_dir}.")
+        return None
+    
     # Load the model from the specified path using dill
     try:
         with open(file_path, 'rb') as f:
             model = dill.load(f)
-        print(f"Model loaded from {file_path}")
+        st.success(f"Model loaded from {file_path}")
+        return model
     except Exception as e:
-        raise RuntimeError(f"Failed to load model: {e}")
-    
-    return model        
-
+        st.error(f"Failed to load model: {e}")
+        return None
 ######LOAD MODEL#######
 pipeline = load_model_from_dir('document_classifier.dill')
 
