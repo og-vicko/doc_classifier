@@ -51,11 +51,12 @@ def load_model_from_dir(model_name):
     try:
         with open(file_path, 'rb') as f:
             model = dill.load(f)
-        st.success(f"Model loaded from {file_path}")
+        st.success("Model Ready")
         return model
     except Exception as e:
         st.error(f"Failed to load model: {e}")
         return None
+    
 ######LOAD MODEL#######
 pipeline = load_model_from_dir('document_classifier.dill')
 
