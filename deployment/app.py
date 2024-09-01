@@ -79,13 +79,17 @@ def make_predictions(df):
     Returns:
         pd.DataFrame: DataFrame containing the predictions and their respective probabilities.
     """
-    probabilities = pipeline.predict_proba(df)
-    df['Probability Of Relevance'] = probabilities[:, 1]
-    
-    # Determine decision for each document
-    df['Decision'] = df['Probability Of Relevance'].apply(lambda x: 'Relevant' if x > 0.5 else 'Irrelevant')
-    
-    return df[['Probability Of Relevance', 'Decision']]
+    try:
+        probabilities = pipeline.predict_proba(df)
+        df['Probability Of Relevance'] = probabilities[:, 1]
+        
+        # Determine decision for each document
+        df['Decision'] = df['Probability Of Relevance'].apply(lambda x: 'Relevant' if x > 0.5 else 'Irrelevant')
+        
+        return df[['Probability Of Relevance', 'Decision']]
+    except Exception as e:
+        st.error(f"Failed to make predictions: {e}")
+        return pd.DataFrame()
 
 
 # Upload File fro prediction
@@ -93,37 +97,41 @@ uploaded_file = st.file_uploader("Upload your input CSV file", type=["csv"])
 
 
 def prepare_data(data):
+    """
+    Prepare the data for prediction by engineering the necessary features.
+    """
+    try:
+        # Engineer columns to match the shape of the train data
+        data['title_and_content'] = data['title'] + data['content']
+        data.drop(['title', 'content'], axis=1, inplace=True)
 
-    #Engineer columns to match shape of train data
-    data['title_and_content'] = data['title'] + data['content']
-    data.drop(['title','content'], axis=1, inplace=True)
+        data['week'] = data['publicationdate'].apply(week_of_month)
+        data['week'] = data['week'].astype('category')
+        data['user'] = ''
+        data['requirementsource'] = ''
+        data['title_and_content'].fillna('Missing', inplace=True) 
 
-    data['week'] = data['publicationdate'].apply(week_of_month)
-    data['week'] = data['week'].astype('category')
-    data['user'] = ''
-    data['requirementsource'] = ''
-    data['title_and_content'].fillna('Missing', inplace=True) 
+        return data
+    except Exception as e:
+        st.error(f"Failed to prepare data: {e}")
+        return pd.DataFrame()
 
-    return data
-
-# if uploaded_file is not None:
-#     # Read the file into a DataFrame
-#     df = pd.read_csv(uploaded_file)
-
-#     prepare_df = prepare_data(df.head())
-#     predictions = make_prediction(prepare_df)
-
-#     st.success(predictions)
 if uploaded_file is not None:
     with st.spinner("Processing..."):
-        # Read the file into a DataFrame
-        df = pd.read_csv(uploaded_file)
+        try:
+            # Read the file into a DataFrame
+            df = pd.read_csv(uploaded_file)
 
-        # Prepare data and make predictions
-        df = df.head()
-        prepared_df = prepare_data(df)
-        predictions_df = make_predictions(prepared_df)
-        st.write(predictions_df)
+            # Prepare data and make predictions
+            df = df.head()  # Optional: Just processing the first few rows for quick prediction
+            prepared_df = prepare_data(df)
+            if not prepared_df.empty:
+                predictions_df = make_predictions(prepared_df)
+                st.write(predictions_df)
+            else:
+                st.error("Data preparation failed. No predictions can be made.")
+        except Exception as e:
+            st.error(f"Failed to process the file: {e}")
 
         # Download button to download predictions
         csv = predictions_df.to_csv(index=False).encode('utf-8')
